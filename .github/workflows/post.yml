@@ -17,8 +17,10 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Instalar requests
-        run: pip install requests
+      - name: Instalar dependencias
+        run: pip install requests openai
 
       - name: Ejecutar bot
         run: python main.py
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
