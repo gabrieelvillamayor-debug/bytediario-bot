@@ -1,5 +1,6 @@
 import requests
 import random
+from deep_translator import GoogleTranslator
 
 PAGE_ID = "1073487005856687"
 PAGE_TOKEN = "EAASlKZCWsRZBMBRkXVPGyOJuUwZCIhuIMyO5dxpiFMbH6XJRmqitnoXb5OTf9oAO8R20ATvpHWny0OnZBYqzkbgqvOZATjo2CvSKg3w4CDQPlAWIAZB6RcuBEbdzl1YO775MdHd8Gcy0HGJPZB6QHfB1m8ix0fzfhOBZBw7d4BRf2BZCbKAxzNtfeIY2uRCfxZC4WmLTkFvys45aO3kuLGaV2PKbZAbkleHPsSyglq7BtoZD"
@@ -9,7 +10,13 @@ fact = requests.get(
     "https://uselessfacts.jsph.pl/api/v2/facts/random"
 ).json()
 
-dato = fact["text"]
+dato_ingles = fact["text"]
+
+# Traducir al español
+dato = GoogleTranslator(
+    source='auto',
+    target='es'
+).translate(dato_ingles)
 
 titulos = [
     "🤯 DATO QUE TE VOLARÁ LA CABEZA",
