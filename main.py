@@ -1,27 +1,40 @@
+import os
 import requests
-import random
+from openai import OpenAI
 
 PAGE_ID = "1073487005856687"
 PAGE_TOKEN = "EAASlKZCWsRZBMBRkXVPGyOJuUwZCIhuIMyO5dxpiFMbH6XJRmqitnoXb5OTf9oAO8R20ATvpHWny0OnZBYqzkbgqvOZATjo2CvSKg3w4CDQPlAWIAZB6RcuBEbdzl1YO775MdHd8Gcy0HGJPZB6QHfB1m8ix0fzfhOBZBw7d4BRf2BZCbKAxzNtfeIY2uRCfxZC4WmLTkFvys45aO3kuLGaV2PKbZAbkleHPsSyglq7BtoZD"
 
-curiosidades = [
-    "El corazón de una ballena azul puede pesar más de 180 kilos.",
-    "Los pulpos tienen tres corazones.",
-    "La miel nunca se vence.",
-    "Hay más estrellas en el universo que granos de arena en la Tierra.",
-    "El cerebro humano genera suficiente electricidad para encender una bombilla."
-]
+client = OpenAI(
+    api_key=os.environ["OPENAI_API_KEY"]
+)
 
-post = random.choice(curiosidades)
+prompt = """
+Genera un post viral de curiosidad para Facebook.
 
-mensaje = f"""🤯 DATO CURIOSO
+FORMATO:
+- título impactante
+- texto corto
+- pregunta final
+- hashtags
 
-{post}
+ESTILO:
+viral, humano, curioso, atrapante.
 
-¿Lo sabías? 👀
-
-#Curiosidades #DatosCuriosos #SabiasQue #ByteDiario
+NO repitas curiosidades comunes.
 """
+
+response = client.chat.completions.create(
+    model="gpt-4.1-mini",
+    messages=[
+        {
+            "role": "user",
+            "content": prompt
+        }
+    ]
+)
+
+mensaje = response.choices[0].message.content
 
 url = f"https://graph.facebook.com/{PAGE_ID}/feed"
 
