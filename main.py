@@ -6,7 +6,7 @@ PAGE_ID = "1073487005856687"
 PAGE_TOKEN = "EAASlKZCWsRZBMBRkXVPGyOJuUwZCIhuIMyO5dxpiFMbH6XJRmqitnoXb5OTf9oAO8R20ATvpHWny0OnZBYqzkbgqvOZATjo2CvSKg3w4CDQPlAWIAZB6RcuBEbdzl1YO775MdHd8Gcy0HGJPZB6QHfB1m8ix0fzfhOBZBw7d4BRf2BZCbKAxzNtfeIY2uRCfxZC4WmLTkFvys45aO3kuLGaV2PKbZAbkleHPsSyglq7BtoZD"
 
 headers = {
-    "User-Agent": "ByteDiarioBot"
+    "User-Agent": "Mozilla/5.0"
 }
 
 subreddits = [
@@ -19,10 +19,14 @@ subreddit = random.choice(subreddits)
 
 url_reddit = f"https://www.reddit.com/r/{subreddit}/top.json?t=day&limit=15"
 
-data = requests.get(
+response = requests.get(
     url_reddit,
     headers=headers
-).json()
+)
+
+print(response.status_code)
+
+data = response.json()
 
 posts = data["data"]["children"]
 
