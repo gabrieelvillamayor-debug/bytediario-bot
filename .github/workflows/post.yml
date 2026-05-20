@@ -18,7 +18,7 @@ jobs:
           python-version: "3.10"
 
       - name: Instalar requests
-        run: pip install requests
+        run: pip install requests deep-translator
 
       - name: Ejecutar bot
         run: python main.py
