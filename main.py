@@ -3,17 +3,10 @@ import random
 import feedparser
 import os
 from deep_translator import GoogleTranslator
-
-# =========================
-# CONFIG FACEBOOK
-# =========================
+from datetime import datetime
 
 PAGE_ID = "1073487005856687"
 PAGE_TOKEN = "EAASlKZCWsRZBMBRkXVPGyOJuUwZCIhuIMyO5dxpiFMbH6XJRmqitnoXb5OTf9oAO8R20ATvpHWny0OnZBYqzkbgqvOZATjo2CvSKg3w4CDQPlAWIAZB6RcuBEbdzl1YO775MdHd8Gcy0HGJPZB6QHfB1m8ix0fzfhOBZBw7d4BRf2BZCbKAxzNtfeIY2uRCfxZC4WmLTkFvys45aO3kuLGaV2PKbZAbkleHPsSyglq7BtoZD"
-
-# =========================
-# SUBREDDITS
-# =========================
 
 subreddits = [
     "todayilearned",
@@ -21,15 +14,27 @@ subreddits = [
     "interestingasfuck"
 ]
 
-# =========================
-# FILTRO DE CONTENIDO
-# =========================
+USED_FILE = "used_posts.txt"
 
 BAD_KEYWORDS = [
     "nsfw", "porn", "sex", "violence", "war", "racist", "kill"
 ]
 
-USED_FILE = "used_posts.txt"
+# =========================
+# HORARIO (UTC GITHUB)
+# =========================
+
+def get_tipo():
+    hour = datetime.utcnow().hour
+
+    if hour == 12:
+        return "mañana"
+    elif hour == 18:
+        return "siesta"
+    elif hour == 23:
+        return "tarde"
+    else:
+        return "random"
 
 
 # =========================
@@ -42,62 +47,57 @@ def load_used():
     return set(open(USED_FILE, "r", encoding="utf-8").read().splitlines())
 
 
-def save_used(id_post):
+def save_used(post_id):
     with open(USED_FILE, "a", encoding="utf-8") as f:
-        f.write(id_post + "\n")
+        f.write(post_id + "\n")
 
 
 def is_valid(title):
     t = title.lower()
-    return not any(word in t for word in BAD_KEYWORDS)
+    return not any(w in t for w in BAD_KEYWORDS)
 
 
 # =========================
-# VIRAL STYLE REWRITE
+# ESTILO VIRAL SEGÚN HORARIO
 # =========================
 
-encabezados = [
-    "🤯 ESTO ES REAL",
-    "😳 DATO VIRAL",
-    "🧠 CURIOSIDAD DEL DÍA",
-    "🔥 INTERNET ESTÁ HABLANDO DE ESTO",
-    "👀 MIRA ESTE DATO"
-]
+def make_message(text, tipo):
 
+    if tipo == "mañana":
+        header = "🌅 CURIOSIDAD DEL DÍA"
+        hook = "🧠 Esto es más interesante de lo que parece:"
+        end = "¿Lo sabías?"
+        tags = "#Curiosidades #Datos"
 
-def make_message(title_es):
-    encabezado = random.choice(encabezados)
+    elif tipo == "siesta":
+        header = "😳 DATO IMPACTANTE"
+        hook = "🔥 Esto te va a sorprender:"
+        end = "Increíble pero real."
+        tags = "#Viral #Increíble"
+
+    elif tipo == "tarde":
+        header = "🤯 INTERNET NO LO PUEDE CREER"
+        hook = "⚠️ Nadie habla de esto:"
+        end = "Esto cambia todo."
+        tags = "#Misterio #Curiosidades"
+
+    else:
+        header = "👀 DATO CURIOSO"
+        hook = "👉 Atención:"
+        end = "¿Lo sabías?"
+        tags = "#DatosCuriosos"
 
     return f"""
-{encabezado}
+{header}
 
-😳 {title_es}
+{hook}
 
-👉 Esto parece falso… pero es completamente real.
+😳 {text}
 
-¿Lo sabías? 👀
+{end}
 
-#Curiosidades #DatosCuriosos #ByteDiario
+{tags}
 """
-
-
-# =========================
-# IMAGEN (REDDIT FALLBACK)
-# =========================
-
-def get_image(post):
-    # RSS no siempre trae imagen directa, fallback simple
-    if hasattr(post, "media_content"):
-        try:
-            return post.media_content[0]["url"]
-        except:
-            pass
-    return None
-
-
-def generate_image_prompt(title):
-    prompt = title.replace(" ", "%20")
-    return f"https://image.pollinations.ai/prompt/viral%20curiosity%20fact%20{prompt}"
 
 
 # =========================
@@ -106,6 +106,7 @@ def generate_image_prompt(title):
 
 def run():
 
+    tipo = get_tipo()
     used = load_used()
 
     subreddit = random.choice(subreddits)
@@ -114,40 +115,34 @@ def run():
     feed = feedparser.parse(rss_url)
 
     posts = [p for p in feed.entries if is_valid(p.title)]
-
-    if not posts:
-        print("❌ No hay posts válidos")
-        return
-
-    # quitar repetidos
     posts = [p for p in posts if p.id not in used]
 
     if not posts:
-        print("♻️ Todos los posts ya fueron usados")
+        print("❌ No hay posts disponibles")
         return
 
-    # elegir el más "viral" (RSS no tiene score real → simulamos)
     post = random.choice(posts)
 
-    titulo_ingles = post.title
-
-    # traducir
     titulo_es = GoogleTranslator(
         source='auto',
         target='es'
-    ).translate(titulo_ingles)
+    ).translate(post.title)
 
-    mensaje = make_message(titulo_es)
+    mensaje = make_message(titulo_es, tipo)
 
-    # imagen
-    image_url = get_image(post)
+    # Imagen (simple fallback)
+    image_url = None
+
+    if hasattr(post, "media_content"):
+        try:
+            image_url = post.media_content[0]["url"]
+        except:
+            pass
+
     if not image_url:
-        image_url = generate_image_prompt(titulo_ingles)
+        image_url = f"https://image.pollinations.ai/prompt/viral%20curiosity%20{post.title.replace(' ','%20')}"
 
-    # =========================
-    # PUBLICAR EN FACEBOOK
-    # =========================
-
+    # FACEBOOK POST
     url_fb = f"https://graph.facebook.com/{PAGE_ID}/photos"
 
     payload = {
@@ -158,12 +153,9 @@ def run():
 
     r = requests.post(url_fb, data=payload)
 
-    # guardar usado
     save_used(post.id)
 
-    print("===== RESULTADO =====")
     print(r.text)
-    print("=====================")
 
 
 if __name__ == "__main__":
