@@ -1,40 +1,35 @@
-import os
 import requests
-from openai import OpenAI
+import random
 
 PAGE_ID = "1073487005856687"
 PAGE_TOKEN = "EAASlKZCWsRZBMBRkXVPGyOJuUwZCIhuIMyO5dxpiFMbH6XJRmqitnoXb5OTf9oAO8R20ATvpHWny0OnZBYqzkbgqvOZATjo2CvSKg3w4CDQPlAWIAZB6RcuBEbdzl1YO775MdHd8Gcy0HGJPZB6QHfB1m8ix0fzfhOBZBw7d4BRf2BZCbKAxzNtfeIY2uRCfxZC4WmLTkFvys45aO3kuLGaV2PKbZAbkleHPsSyglq7BtoZD"
 
-client = OpenAI(
-    api_key=os.environ["OPENAI_API_KEY"]
-)
+# Obtener curiosidad random
+fact = requests.get(
+    "https://uselessfacts.jsph.pl/api/v2/facts/random"
+).json()
 
-prompt = """
-Genera un post viral de curiosidad para Facebook.
+dato = fact["text"]
 
-FORMATO:
-- título impactante
-- texto corto
-- pregunta final
-- hashtags
+titulos = [
+    "🤯 DATO QUE TE VOLARÁ LA CABEZA",
+    "😳 ESTO ES REAL",
+    "🧠 CURIOSIDAD DEL DÍA",
+    "👀 CASI NADIE SABE ESTO",
+    "🔥 DATO IMPACTANTE"
+]
 
-ESTILO:
-viral, humano, curioso, atrapante.
+titulo = random.choice(titulos)
 
-NO repitas curiosidades comunes.
+mensaje = f"""
+{titulo}
+
+{dato}
+
+¿Lo sabías? 👀
+
+#Curiosidades #DatosCuriosos #SabiasQue #ByteDiario
 """
-
-response = client.chat.completions.create(
-    model="gpt-4.1-mini",
-    messages=[
-        {
-            "role": "user",
-            "content": prompt
-        }
-    ]
-)
-
-mensaje = response.choices[0].message.content
 
 url = f"https://graph.facebook.com/{PAGE_ID}/feed"
 
